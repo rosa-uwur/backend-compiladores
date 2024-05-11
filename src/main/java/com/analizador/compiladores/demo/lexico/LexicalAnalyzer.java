@@ -28,8 +28,10 @@ public class LexicalAnalyzer {
     public   List<Tokenv2> tablaTokens = new ArrayList<>();
     public   List<LexicalError> tablaErrores = new ArrayList<>();
     public  void analyze(ArrayList<String> cadenas) {
+        int numlinea = 0;
         for (String code : cadenas) {
-            analyze(code);
+            numlinea++;
+            analyze(code, numlinea);
             // Imprimir la tabla de tablaTokens para cada cadena
             System.out.println("Tabla de tablaTokens para la cadena:");
             for (Tokenv2 Tokenv2 : tablaTokens) {
@@ -45,7 +47,7 @@ public class LexicalAnalyzer {
     }
 
 
-    public void analyze(String code) {
+    public void analyze(String code,int  l) {
         int position = 0;
         while (position < code.length()) {
             char currentChar = code.charAt(position);
@@ -92,12 +94,13 @@ public class LexicalAnalyzer {
                     position++;
                 }
                 if (position == code.length()) {
-                    tablaErrores.add(new LexicalError("String no encerrada en comillas", start));
+                    tablaErrores.add(new LexicalError("String no encerrada en comillas", l));
                 } else {
                     String literal = code.substring(start + 1, position);
                     tablaTokens.add(new Tokenv2(TokenType.STRING, literal));
                     position++;
                 }
+
             }
             else {
                 switch (currentChar) {
