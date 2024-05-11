@@ -30,7 +30,7 @@ public class AnalizadorLexico {
   /**
    * @return Siguiente token válido en el programa
    */
-  public Token getSiguienteToken() { return automata.obtenerSiguientToken(); }
+  private Token getSiguienteToken() { return automata.obtenerSiguientToken(); }
 
   /**
    * Mostrar los identificadores encontrados en el programa
@@ -45,6 +45,7 @@ public class AnalizadorLexico {
       nodoActual = nodoActual.getSiguiente();
     }
     System.out.println("Tabla de errores");
+    this.tablaErrores = automata.tablaErrores;
     for(ErrorLexico error : automata.tablaErrores) {
       System.out.println("Mensaje: " + error.getMensaje());
       System.out.println("Línea: " + error.getLinea());
