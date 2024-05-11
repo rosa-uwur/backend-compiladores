@@ -2,6 +2,8 @@ package com.analizador.compiladores.demo.controllers;
 
 import com.analizador.compiladores.demo.estructuras.TextoRequest;
 import com.analizador.compiladores.demo.lexico.AnalizadorLexico;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.BufferedReader;
@@ -19,8 +21,10 @@ public class PathController {
     }
 
 
+    @CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
     @PostMapping("/analisisLexico")
-    public AnalizadorLexico recibirContenido(@RequestBody TextoRequest texto) throws IOException {
+    public ResponseEntity<AnalizadorLexico> recibirContenido(@RequestBody TextoRequest texto) throws IOException {
+        System.out.println("ENTRA ANALISIS LEXICO");
         try {
             if (texto == null) {
                 throw new IllegalArgumentException("El objeto 'texto' es nulo.");
@@ -39,11 +43,11 @@ public class PathController {
             lexico.imprimirSimbolos();
 
             System.out.println("a");
-            return lexico;
+            return ResponseEntity.ok(lexico); // Devuelve el objeto lexico con status HTTP OK
         } catch (IllegalArgumentException e) {
             // Manejo de la excepción de argumento inválido
             System.err.println("Error: " + e.getMessage());
-            return null; // o lanzar una excepción específica de tu aplicación
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // Devuelve un status de error 400
         }
     }
 

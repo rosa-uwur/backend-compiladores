@@ -3,6 +3,7 @@ package com.analizador.compiladores.demo.lexico;
 import com.analizador.compiladores.demo.estructuras.Lista;
 import com.analizador.compiladores.demo.estructuras.Nodo;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,10 +61,9 @@ public class AFN {
     estado = 0;
 
     // Recorrer caracter por caracter
-    while(token == null) {
-      if (cadena.length()> 0) {
-        c = cadena.charAt(f); // Caracter actual a evaluar
-      }
+    while(token == null && !cadena.isBlank()) {
+      System.out.println(cadena + "ind " + Integer.valueOf(f));
+      c = cadena.charAt(f); // Caracter actual a evaluar
       ErrorLexico el ;
       switch(estado) {
           case 0: // Estado inicial
@@ -265,7 +265,8 @@ public class AFN {
             break;
         }
 
-        if (f == cadena.length() - 1) {
+      System.out.println(cadena + " " + Integer.valueOf(f));
+        if (Integer.valueOf(f) == cadena.length() - 1) {
           // Generar token o error según el estado al llegar al último caracter de la línea
           if (estado == 1) {
             token = generarToken(f, f, CategoriasLexicas.CARACTER_SIMPLE);
@@ -299,6 +300,7 @@ public class AFN {
 
           f = i = 0;
           l++;
+          cadena = lineas.get(l).trim();
         } else {
           cadena = lineas.get(l).trim();
           f++;
