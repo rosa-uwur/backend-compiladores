@@ -40,8 +40,8 @@ public class AFN {
     this.estado = 0;
     this.i = this.f = 0;
     this.l = 0;
-    this.caracteresSimples = new Character[] {';', '=', '+', '-', '*', '(', ')', '{', '}', ','};
-    this.palabrasReservadas = new String[] { "class", "float", "int", "read", "write" };
+    this.caracteresSimples = new Character[] {';', '=', '+', '-', '*', '(', ')', '{', '}', ',', '/', '%', '+', '-', '<', '>', '[', ']', '.', '¡', '!', '"', '"', '¿', '?', '_', '$', '#', '@', '&', '|'};
+    this.palabrasReservadas = new String[] { "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
     this.simbolos = new Lista<>();
   }
 
