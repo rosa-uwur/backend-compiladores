@@ -8,7 +8,7 @@ public class LexicalAnalyzer {
 
     private Map<String, Integer> palabrasMap = new HashMap<>();
     private void llenaPalabras(){
-         String[] palabrasReservadas = new String[]{"¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
+         String[] palabrasReservadas = new String[]{"negocio", "vigilancia", "lugar","misiones" ,"control","¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
 
 
         for(String palabra : palabrasReservadas) {
@@ -58,15 +58,31 @@ public class LexicalAnalyzer {
                     position++;
                 }
                 String identifier = code.substring(start, position);
-                tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
-            } else if (Character.isDigit(currentChar)) {
+
+                // Verificar si el identificador es una palabra reservada mal escrita
+                // Validar que el identificador comience con '#' seguido de letras
+                if (identifier.matches("^#[a-zA-Z]+$")) {
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                } else if (palabrasMap.containsKey(identifier)) {
+                    tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier));
+                }else if (identifier.matches("^#[a-zA-Z]+$")) {
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                }
+
+
+            }else if (Character.isDigit(currentChar)) {
                 int start = position;
                 while (position < code.length() && Character.isDigit(code.charAt(position))) {
                     position++;
                 }
-                int value = Integer.parseInt(code.substring(start, position));
-                tablaTokens.add(new Tokenv2(TokenType.INTEGER, value));
-            } else if (currentChar == '"') {
+                String numericLiteral = code.substring(start, position);
+                int value = Integer.parseInt(numericLiteral);
+                if (value >= 0 && value <= 9) {
+                    tablaTokens.add(new Tokenv2(TokenType.DIGIT, value));
+                } else {
+                    tablaTokens.add(new Tokenv2(TokenType.INTEGER, value));
+                }
+            }else if (currentChar == '"') {
                 int start = position;
                 position++;
                 while (position < code.length() && code.charAt(position) != '"') {
@@ -82,107 +98,111 @@ public class LexicalAnalyzer {
                     tablaTokens.add(new Tokenv2(TokenType.STRING, literal));
                     position++;
                 }
-            } else {
+            }
+            else {
                 switch (currentChar) {
                     case '+':
-                        tablaTokens.add(new Tokenv2(TokenType.PLUS, null));
+                        tablaTokens.add(new Tokenv2(TokenType.PLUS, currentChar));
                         position++;
                         break;
                     case '-':
-                        tablaTokens.add(new Tokenv2(TokenType.MINUS, null));
+                        tablaTokens.add(new Tokenv2(TokenType.MINUS, currentChar));
                         position++;
                         break;
                     case '*':
-                        tablaTokens.add(new Tokenv2(TokenType.MULTIPLY, null));
+                        tablaTokens.add(new Tokenv2(TokenType.MULTIPLY, currentChar));
                         position++;
                         break;
                     case '/':
-                        tablaTokens.add(new Tokenv2(TokenType.DIVIDE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.DIVIDE, currentChar));
                         position++;
                         break;
                     case '=':
                         if (position + 1 < code.length() && code.charAt(position + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.EQUAL_TO, null));
+                            tablaTokens.add(new Tokenv2(TokenType.EQUAL_TO, currentChar));
                             position += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.ASSIGN, null));
+                            tablaTokens.add(new Tokenv2(TokenType.ASSIGN, currentChar));
                             position++;
                         }
                         break;
                     case '!':
                         if (position + 1 < code.length() && code.charAt(position + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.NOT_EQUAL_TO, null));
+                            tablaTokens.add(new Tokenv2(TokenType.NOT_EQUAL_TO, currentChar));
                             position += 2;
                         } else {
-                            tablaErrores.add(new LexicalError("Caracteres no validos: !", position));
-                            position++;
+                            tablaTokens.add(new Tokenv2(TokenType.ENDPROGRAM, currentChar));
+                            position += 2;
                         }
                         break;
                     case '<':
                         if (position + 1 < code.length() && code.charAt(position + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN_OR_EQUAL_TO, null));
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN_OR_EQUAL_TO, currentChar));
                             position += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN, null));
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN, currentChar));
                             position++;
                         }
                         break;
                     case '>':
                         if (position + 1 < code.length() && code.charAt(position + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN_OR_EQUAL_TO, null));
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN_OR_EQUAL_TO, currentChar));
                             position += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN, null));
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN, currentChar));
                             position++;
                         }
                         break;
                     case '(':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, null));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, currentChar));
                         position++;
                         break;
                     case ')':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, null));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, currentChar));
                         position++;
                         break;
                     case '{':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, currentChar));
                         position++;
                         break;
                     case '}':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, currentChar));
                         position++;
                         break;
                     case ',':
-                        tablaTokens.add(new Tokenv2(TokenType.COMMA, null));
+                        tablaTokens.add(new Tokenv2(TokenType.COMMA, currentChar));
                         position++;
                         break;
                     case ';':
-                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, null));
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, currentChar));
                         position++;
                         break;
                     case '#':
-                        tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, null));
+                        tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, currentChar));
                         position++;
                         break;
                     case '.':
-                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, null));
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, currentChar));
                         position++;
                         break;
                     case '[':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, currentChar));
                         position++;
                         break;
                     case ']':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, currentChar));
                         position++;
                         break;
                     case '%':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, null));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, currentChar));
                         position++;
                         break;
                     case '¡':
-                        tablaTokens.add(new Tokenv2(TokenType.ASSIGN, null));
+                        tablaTokens.add(new Tokenv2(TokenType.ASSIGN, currentChar));
                         position++;
+                        break;
+                    case '"':
+                    case ':':
                         break;
                     default:
                         tablaErrores.add(new LexicalError("Caracter no valido: " + currentChar, position));

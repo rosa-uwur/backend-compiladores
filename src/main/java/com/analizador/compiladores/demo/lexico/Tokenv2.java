@@ -76,6 +76,15 @@ public class Tokenv2 {
             case SEMICOLON:
                 categoriaLexica = "Fin linea";
                 break;
+            case ENDPROGRAM:
+                categoriaLexica = "Fin programa";
+                break;
+            case RESERVED_WORD:
+                categoriaLexica = "Palabra reservada";
+                break;
+            case DIGIT:
+                categoriaLexica = "Digito";
+                break;
         }
     return categoriaLexica;
     }
