@@ -32,7 +32,8 @@ public class AnalizadorLexico {
   /**
    * @return Siguiente token válido en el programa
    */
-  private Token getSiguienteToken() { return automata.obtenerSiguientToken(); }
+  private Token getSiguienteToken() {
+    return automata.obtenerSiguientToken(); }
 
   /**
    * Mostrar los identificadores encontrados en el programa

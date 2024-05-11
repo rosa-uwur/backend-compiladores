@@ -5,7 +5,11 @@ import com.analizador.compiladores.demo.estructuras.Nodo;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Clase para el automata finito no determinista
@@ -19,10 +23,13 @@ public class AFN {
   private final ArrayList<String> lineas;
   private String cadena;
   private final Lista<Token> simbolos;
-  private final Character [] caracteresSimples;
-  private final String [] palabrasReservadas;
+
+  public List<Token> tablaTokens = new ArrayList<>();
+  private final Character[] caracteresSimples;
+  private final String[] palabrasReservadas;
 
   public List<ErrorLexico> tablaErrores = new ArrayList<>();
+
   private enum CategoriasLexicas {
     IDENTIFICADOR,
     NUMERO_ENTERO,
@@ -31,8 +38,16 @@ public class AFN {
     PALABRA_RESERVADA
   }
 
+  // Construir la expresión regular dinámicamente
+
+
+  // Compilar el patrón
+  Pattern patronPalabrasReservadas;
+
+
   /**
    * Instanciar un automata finito no determinista
+   *
    * @param lineas Arreglo de las líneas del programa a analizar
    */
   public AFN(ArrayList<String> lineas) {
@@ -40,8 +55,10 @@ public class AFN {
     this.estado = 0;
     this.i = this.f = 0;
     this.l = 0;
-    this.caracteresSimples = new Character[] {'ñ',';', '=', '+', '-', '*', '(', ')', '{', '}', ',', '/', '%', '+', '-', '<', '>', '[', ']', '.', '¡', '!', '"', '"', '¿', '?', '_', '$', '#', '@', '&', '|'};
-    this.palabrasReservadas = new String[] { "¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
+    this.caracteresSimples = new Character[]{'ñ', ';', '=', '+', '-', '*', '(', ')', '{', '}', ',', '/', '%', '+', '-', '<', '>', '[', ']', '.', '¡', '!', '"', '"', '¿', '?', '_', '$', '#', '@', '&', '|'};
+    this.palabrasReservadas = new String[]{"¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
+    String patronExpresion = "\\b(" + Arrays.stream(palabrasReservadas).collect(Collectors.joining("|")) + ")\\b";
+    patronPalabrasReservadas = Pattern.compile(patronExpresion);
     this.simbolos = new Lista<>();
   }
 
@@ -50,6 +67,269 @@ public class AFN {
    */
   public Token obtenerSiguientToken() {
     Token token = null;
+
+    // Si se llegó a la última línea
+    if (l == lineas.size()) return null;
+
+    // Saltarse las lineas en blanco y los comentarios
+    while (lineas.get(l).trim().isBlank() || lineas.get(l).trim().startsWith("//")) l++;
+
+    cadena = lineas.get(l).trim();
+    estado = 0;
+
+    // Recorrer caracter por caracter
+    while (token == null && !cadena.isBlank()) {
+      System.out.println(cadena + "ind " + Integer.valueOf(f));
+      c = cadena.charAt(f); // Caracter actual a evaluar
+      ErrorLexico el;
+      switch (estado) {
+        case 0: // Estado inicial
+          if (esCaracterSimple(c)) {
+            estado = 1;
+          } else if (esLetraMayuscula(c)) {
+            estado = 2;
+          } else if (esDigito(c) && c != '0') {
+            estado = 4;
+          } else if (c == '0') {
+            estado = 5;
+          } else if (esLetraMinuscula(c)) {
+            estado = 8;
+          } else if (esEspacio(c)) { //ignora espacios
+            i++;
+          } else {
+            generarError("Caracter desconocido: " + c, l);
+            el = new ErrorLexico("Caracter desconocido: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+          }
+          break;
+
+        case 1: // Estado final caracteres simples
+          token = generarToken(i, i, CategoriasLexicas.CARACTER_SIMPLE);
+          break;
+
+        case 2: // Identificadores
+          if (esDigito(c) || esLetraMinuscula(c)) estado = 3;
+          else if (esCaracterSimple(c) || esEspacio(c)) {
+            if (esLetraMayuscula(cadena.charAt(f - 1))) {
+              generarError("Un identificador no puede ser solo una letra mayuscula: " + cadena.charAt(f - 1), l);
+              el = new ErrorLexico("Un identificador no puede ser solo una letra mayuscula: ", l, String.valueOf(cadena.charAt(f - 1)));
+              tablaErrores.add(el);
+            } else if (cadena.charAt(f - 1) == '_') {
+              generarError("Un identificador no puede terminar con _: " + cadena.substring(i, f), l);
+              el = new ErrorLexico("Un identificador no puede terminar con _: ", l, cadena.substring(i, f));
+              tablaErrores.add(el);
+              estado = 0;
+            }
+          } else if (esLetraMayuscula(c)) {
+            generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
+            el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 9;
+          } else if (c != '_') {
+            generarError("Caracter invalido en un identificador: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 9;
+          }
+          break;
+
+        case 3: // Estado final identificadores
+          if (c == '_') estado = 2;
+          else if (esCaracterSimple(c) || esEspacio(c))
+            token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
+          else if (esLetraMayuscula(c)) {
+            generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
+            el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 9;
+          } else if (!esLetraMinuscula(c) && !esDigito(c)) {
+            generarError("Caracter invalido en un identificador: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 9;
+          }
+          break;
+
+        case 4: // Números enteros o punto flotante
+          if (esCaracterSimple(c) || esEspacio(c))
+            token = generarToken(i, f, CategoriasLexicas.NUMERO_ENTERO);
+          else if (!esDigito(c)) {
+            generarError("Caracter invalido en un número: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          }
+          break;
+
+        case 5: // Números punto flotante o Estado final entero 0
+          if (c == '.') estado = 6;
+          else if (esCaracterSimple(c) || esEspacio(c))
+            token = generarToken(i, f, CategoriasLexicas.NUMERO_ENTERO);
+          else if (esDigito(c)) {
+            generarError("Un número no puede comenzar con 0 seguido de más digitos", l);
+            el = new ErrorLexico("Un número no puede comenzar con 0 seguido de más digitos", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 11;
+          } else {
+            generarError("Caracter invalido en un número: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          }
+          break;
+
+        case 6: // Números punto flotante
+          if (esDigito(c)) estado = 7;
+          else if (esEspacio(c)) {
+            generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
+            el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, cadena.substring(i, f));
+            tablaErrores.add(el);
+            //estado = 0;
+          } else if (esCaracterSimple(c)) {
+            generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
+            el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 1;
+          } else if (c == '.') {
+            generarError("Ya hay un punto decimal en el número", l);
+            el = new ErrorLexico("Ya hay un punto decimal en el número", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          } else {
+            generarError("Caracter invalido en un número: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          }
+          break;
+
+        case 7: // Estado final números punto flotante
+          if (esCaracterSimple(c) || esEspacio(c))
+            token = generarToken(i, f, CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
+          else if (c == '.') {
+            generarError("Ya hay un punto decimal en el número", l);
+            el = new ErrorLexico("Ya hay un punto decimal en el número", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          } else if (!esDigito(c)) {
+            generarError("Caracter invalido en un número: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 10;
+          }
+          break;
+
+        case 8: // Estado final palabra reservada
+          if (esCaracterSimple(c) || esEspacio(c)) {
+            Matcher matcher = patronPalabrasReservadas.matcher(cadena.substring(i, f));
+            if (matcher.find()) {
+              token = generarToken(i, f, CategoriasLexicas.PALABRA_RESERVADA);
+            } else {
+              generarError("Palabra reservada no identificada: " + cadena.substring(i, f), l);
+              el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena);
+              tablaErrores.add(el);
+              estado = 0;
+            }
+          } else if (!esLetraMinuscula(c)) {
+            generarError("Caracter invalido en una palabra reservada: " + c, l);
+            el = new ErrorLexico("Caracter invalido en una palabra reservada: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 12;
+          }
+          break;
+
+        case 9: // Lexico.Error Identificadores
+          if (esCaracterSimple(c) || esEspacio(c)) {
+            estado = 0;
+          } else if (esLetraMayuscula(c)) {
+            generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
+            el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+          } else if (c != '_' && !esLetraMinuscula(c) && !esDigito(c)) {
+            generarError("Caracter invalido en un identificador: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+          }
+          break;
+
+        case 10: // Lexico.Error Números enteros y punto flotante
+          // Se ejecuta lo mismo del caso 11:
+        case 11: // Lexico.Error Números enteros
+          if (esEspacio(c)) {
+            this.i = this.f;
+            this.f--;
+            estado = 0;
+          } else if (esCaracterSimple(c)) {
+            estado = 1;
+          } else if (c != '.' && !esDigito(c)) {
+            generarError("Caracter invalido en un número: " + c, l);
+            el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+          }
+          break;
+
+        case 12: // Lexico.Error Palabras reservadas
+          if (esCaracterSimple(c) || esEspacio(c)) {
+            estado = 0;
+          } else if (!esLetraMinuscula(c)) {
+            generarError("Caracter invalido en una palabra reservada: " + c, l);
+            el = new ErrorLexico("Caracter invalido en una palabra reservada: ", l, String.valueOf(c));
+            tablaErrores.add(el);
+          }
+          break;
+      }
+
+      System.out.println(cadena + " " + Integer.valueOf(f));
+      if (Integer.valueOf(f) == cadena.length() - 1) {
+        // Generar token o error según el estado al llegar al último caracter de la línea
+        if (estado == 1) {
+          token = generarToken(f, f, CategoriasLexicas.CARACTER_SIMPLE);
+        } else if (estado == 2) {
+          generarError("Un identificador no puede terminar con _: " + cadena.substring(i, f), l);
+          el = new ErrorLexico("Un identificador no puede terminar con _: ", l, cadena.substring(i, f));
+          tablaErrores.add(el);
+        } else if (estado == 3) {
+          token = generarToken(i, (byte) (f + 1), CategoriasLexicas.IDENTIFICADOR);
+        } else if (estado == 4 || estado == 5) {
+          token = generarToken(i, (byte) (f + 1), CategoriasLexicas.NUMERO_ENTERO);
+        } else if (estado == 6) {
+          generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
+          el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, cadena.substring(i, f));
+          tablaErrores.add(el);
+        } else if (estado == 7) {
+          token = generarToken(i, (byte) (f + 1), CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
+        } else if (estado == 8) {
+          if (esPalabraReservada(cadena)) {//.substring(i, f + 1))) {
+            token = generarToken(i, (byte) (f + 1), CategoriasLexicas.PALABRA_RESERVADA);
+          } else {
+            generarError("Palabra reservada no identificada: " + cadena.substring(i, f + 1), l);
+            el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena.substring(i, f + 1));
+            tablaErrores.add(el);
+          }
+        } else if (estado == 12) {
+          generarError("Caracter inválido en una palabra reservada: " + cadena.charAt(cadena.length() - 1), l);
+          el = new ErrorLexico("Caracter inválido en una palabra reservada: ", l, String.valueOf(cadena.charAt(cadena.length() - 1)));
+          tablaErrores.add(el);
+        }
+
+        f = i = 0;
+        l++;
+        cadena = lineas.get(l).trim();
+      } else {
+        cadena = lineas.get(l).trim();
+        f++;
+      }
+    }
+
+    return token;
+  }
+
+
+
+
+  public Token obtenerSiguientToken2(ArrayList<String> cadenas) {
+    Token token = null;
+    int l  = 0;
 
     // Si se llegó a la última línea
     if (l == lineas.size()) return null;
@@ -65,258 +345,113 @@ public class AFN {
       System.out.println(cadena + "ind " + Integer.valueOf(f));
       c = cadena.charAt(f); // Caracter actual a evaluar
       ErrorLexico el ;
-      switch(estado) {
-          case 0: // Estado inicial
-            if (esCaracterSimple(c)) {
-              estado = 1;
-            } else if (esLetraMayuscula(c)) {
-              estado = 2;
-            } else if (esDigito(c) && c != '0') {
-              estado = 4;
-            } else if (c == '0') {
-              estado = 5;
-            } else if (esLetraMinuscula(c)) {
-              estado = 8;
-            } else if (esEspacio(c) ) { //ignora espacios
-              i++;
-            } else {
-              generarError("Caracter desconocido: " + c, l);
-              el = new ErrorLexico("Caracter desconocido: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-            }
-            break;
-
-          case 1: // Estado final caracteres simples
-            token = generarToken(i, i, CategoriasLexicas.CARACTER_SIMPLE);
-            break;
-
-          case 2: // Identificadores
-            if (esDigito(c) || esLetraMinuscula(c)) estado = 3;
-            else if (esCaracterSimple(c) || esEspacio(c)) {
-              if (esLetraMayuscula(cadena.charAt(f - 1))) {
-                generarError("Un identificador no puede ser solo una letra mayuscula: " + cadena.charAt(f - 1), l);
-                el = new ErrorLexico("Un identificador no puede ser solo una letra mayuscula: ", l, String.valueOf(cadena.charAt(f - 1)));
-                tablaErrores.add(el);
-              }else if (cadena.charAt(f - 1) == '_'){
-                generarError("Un identificador no puede terminar con _: " + cadena.substring(i, f), l);
-                el = new ErrorLexico("Un identificador no puede terminar con _: ", l, cadena.substring(i, f));
-                tablaErrores.add(el);
-                estado = 0;}
-            } else if (esLetraMayuscula(c)) {
-              generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
-              el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 9;
-            } else if (c != '_') {
-              generarError("Caracter invalido en un identificador: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 9;
-            }
-            break;
-
-          case 3: // Estado final identificadores
-            if (c == '_') estado = 2;
-            else if (esCaracterSimple(c) || esEspacio(c))
-              token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
-            else if (esLetraMayuscula(c)) {
-              generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
-              el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 9;
-            } else if (!esLetraMinuscula(c) && !esDigito(c)) {
-              generarError("Caracter invalido en un identificador: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 9;
-            }
-            break;
-
-          case 4: // Números enteros o punto flotante
-            if (esCaracterSimple(c) || esEspacio(c))
-              token = generarToken(i, f, CategoriasLexicas.NUMERO_ENTERO);
-            else if (!esDigito(c)) {
-              generarError("Caracter invalido en un número: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            }
-            break;
-
-          case 5: // Números punto flotante o Estado final entero 0
-            if (c == '.') estado = 6;
-            else if (esCaracterSimple(c) || esEspacio(c))
-              token = generarToken(i, f, CategoriasLexicas.NUMERO_ENTERO);
-            else if (esDigito(c)) {
-              generarError("Un número no puede comenzar con 0 seguido de más digitos", l);
-              el = new ErrorLexico("Un número no puede comenzar con 0 seguido de más digitos", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 11;
-            }
-            else {
-              generarError("Caracter invalido en un número: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            }
-            break;
-
-          case 6: // Números punto flotante
-            if (esDigito(c)) estado = 7;
-            else if (esEspacio(c)) {
-              generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
-              el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, cadena.substring(i, f));
-              tablaErrores.add(el);
-              //estado = 0;
-            } else if (esCaracterSimple(c)) {
-              generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
-              el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 1;
-            }
-            else if (c == '.') {
-              generarError("Ya hay un punto decimal en el número", l);
-              el = new ErrorLexico("Ya hay un punto decimal en el número", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            } else {
-              generarError("Caracter invalido en un número: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            }
-            break;
-
-          case 7: // Estado final números punto flotante
-            if (esCaracterSimple(c) || esEspacio(c))
-              token = generarToken(i, f, CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
-            else if (c == '.') {
-              generarError("Ya hay un punto decimal en el número", l);
-              el = new ErrorLexico("Ya hay un punto decimal en el número", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            } else if (!esDigito(c)) {
-              generarError("Caracter invalido en un número: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 10;
-            }
-            break;
-
-        case 8: // Estado final palabra reservada
-          if (esCaracterSimple(c) || esEspacio(c)) {
-            if (esPalabraReservada(cadena.substring(i, f))) {
-              token = generarToken(i, f, CategoriasLexicas.PALABRA_RESERVADA);
-            } else {
-              // Verificar si es un identificador (nombre de variable)
-              if (esIdentificador(cadena.substring(i, f))) {
-                token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
-              } else {
-                // Verificar si es texto contenido en comillas
-                if (esTextoComillas(cadena.substring(i, f))) {
-                  token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
-                } else {
-                  generarError("Palabra reservada no identificada: " + cadena.substring(i, f), l);
-                  el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena.substring(i, f));
-                  tablaErrores.add(el);
-                  estado = 0;
-                }
-              }
-            }
-          } else if (!esLetraMinuscula(c)) {
-            generarError("Caracter invalido en una palabra reservada: " + c, l);
-            el = new ErrorLexico("Caracter invalido en una palabra reservada: " , l, String.valueOf(c));
-            tablaErrores.add(el);
-            estado = 12;
-          }
-          break;
-
-          case 9: // Lexico.Error Identificadores
-            if (esCaracterSimple(c) || esEspacio(c)) {
-              estado = 0;
-            } else if (esLetraMayuscula(c)) {
-              generarError("Solo puede haber una letra mayúscula al inicio del identificador: " + c, l);
-              el = new ErrorLexico("Solo puede haber una letra mayúscula al inicio del identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-            } else if (c != '_' && !esLetraMinuscula(c) && !esDigito(c)) {
-              generarError("Caracter invalido en un identificador: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un identificador: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-            }
-            break;
-
-          case 10: // Lexico.Error Números enteros y punto flotante
-            // Se ejecuta lo mismo del caso 11:
-          case 11: // Lexico.Error Números enteros
-            if (esEspacio(c)) {
-              this.i = this.f;
-              this.f--;
-              estado = 0;
-            }
-            else if (esCaracterSimple(c)) {
-              estado = 1;
-            }else if (c != '.' && !esDigito(c)) {
-              generarError("Caracter invalido en un número: " + c, l);
-              el = new ErrorLexico("Caracter invalido en un número: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-            }
-            break;
-
-          case 12: // Lexico.Error Palabras reservadas
-            if (esCaracterSimple(c) || esEspacio(c)) {
-              estado = 0;
-            }else if (!esLetraMinuscula(c)) {
-              generarError("Caracter invalido en una palabra reservada: " + c, l);
-              el = new ErrorLexico("Caracter invalido en una palabra reservada: ", l, String.valueOf(c));
-              tablaErrores.add(el);
-            }
-            break;
-        }
-
-      System.out.println(cadena + " " + Integer.valueOf(f));
-        if (Integer.valueOf(f) == cadena.length() - 1) {
-          // Generar token o error según el estado al llegar al último caracter de la línea
-          if (estado == 1) {
-            token = generarToken(f, f, CategoriasLexicas.CARACTER_SIMPLE);
-          } else if (estado == 2) {
-            generarError("Un identificador no puede terminar con _: " + cadena.substring(i, f), l);
-            el = new ErrorLexico("Un identificador no puede terminar con _: ", l, cadena.substring(i, f));
-            tablaErrores.add(el);
-          } else if (estado == 3) {
-            token = generarToken(i, (byte) (f + 1), CategoriasLexicas.IDENTIFICADOR);
-          } else if (estado == 4 || estado == 5) {
-            token = generarToken(i, (byte) (f + 1), CategoriasLexicas.NUMERO_ENTERO);
-          } else if (estado == 6) {
-            generarError("Un número no puede terminar con punto decimal: " + cadena.substring(i, f), l);
-            el = new ErrorLexico("Un número no puede terminar con punto decimal: ", l, cadena.substring(i, f));
-            tablaErrores.add(el);
-          } else if (estado == 7) {
-            token = generarToken(i, (byte) (f + 1), CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
-          } else if (estado == 8) {
-            if (esPalabraReservada(cadena)){//.substring(i, f + 1))) {
-              token = generarToken(i, (byte) (f + 1), CategoriasLexicas.PALABRA_RESERVADA);
-            } else {
-              generarError("Palabra reservada no identificada: " + cadena.substring(i, f + 1), l);
-              el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena.substring(i, f + 1));
-              tablaErrores.add(el);
-            }
-          } else if (estado == 12) {
-            generarError("Caracter inválido en una palabra reservada: " + cadena.charAt(cadena.length() - 1), l);
-            el = new ErrorLexico("Caracter inválido en una palabra reservada: ", l, String.valueOf(cadena.charAt(cadena.length() - 1)));
-            tablaErrores.add(el);
-          }
-
-          f = i = 0;
-          l++;
-          cadena = lineas.get(l).trim();
-        } else {
-          cadena = lineas.get(l).trim();
-          f++;
-        }
+      if (esCaracterSimple(c)) {
+        estado = 1;
+      } else if (esLetraMayuscula(c)) {
+        estado = 2;
+      } else if (esDigito(c) && c != '0') {
+        estado = 4;
+      } else if (c == '0') {
+        estado = 5;
+      } else if (esLetraMinuscula(c)) {
+        estado = 8;
+      } else if (esEspacio(c) ) { //ignora espacios
+        i++;
+      } else {
+        generarError("Caracter desconocido: " + c, l);
+        el = new ErrorLexico("Caracter desconocido: ", l, String.valueOf(c));
+        tablaErrores.add(el);
       }
+
+      if (Integer.valueOf(f) == cadena.length() - 1) {
+        validaCadena(cadena, l);
+        f = i = 0;
+        l++;
+        cadena = lineas.get(l).trim();
+      } else {
+        cadena = lineas.get(l).trim();
+        f++;
+      }
+
+
+    }
+
+
 
     return token;
   }
+
+
+  public void validaCadena(String cadena, int linea) {
+
+    // Expresiones regulares para validar la sintaxis
+    String identificadorRegex = "[a-zA-Z_][a-zA-Z0-9_]*";
+    String numeroEnteroRegex = "\\d+";
+    String numeroFlotanteRegex = "\\d+\\.\\d+";
+    String caracterSimpleRegex = "'.{1}'";
+    String palabraReservadaRegex = "(if|else|while|for|return)";
+
+    // Patrones para cada categoría léxica
+    Pattern identificadorPattern = Pattern.compile(identificadorRegex);
+    Pattern numeroEnteroPattern = Pattern.compile(numeroEnteroRegex);
+    Pattern numeroFlotantePattern = Pattern.compile(numeroFlotanteRegex);
+    Pattern caracterSimplePattern = Pattern.compile(caracterSimpleRegex);
+    Pattern palabraReservadaPattern = Pattern.compile(palabraReservadaRegex);
+
+    // Realizar el análisis léxico
+    Matcher matcher;
+
+    // Validación para identificador
+    matcher = identificadorPattern.matcher(cadena);
+    if (matcher.find()) {
+      byte inicio = (byte) matcher.start();
+      byte fin = (byte) matcher.end();
+      Token token = generarToken(inicio, fin, CategoriasLexicas.IDENTIFICADOR);
+      tablaTokens.add(token);
+    }
+
+    // Validación para número entero
+    matcher = numeroEnteroPattern.matcher(cadena);
+    if (matcher.find()) {
+      byte inicio = (byte) matcher.start();
+      byte fin = (byte) matcher.end();
+      Token token = generarToken(inicio, fin, CategoriasLexicas.NUMERO_ENTERO);
+      tablaTokens.add(token);
+    }
+
+    // Validación para número de punto flotante
+    matcher = numeroFlotantePattern.matcher(cadena);
+    if (matcher.find()) {
+      byte inicio = (byte) matcher.start();
+      byte fin = (byte) matcher.end();
+      Token token = generarToken(inicio, fin, CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
+      tablaTokens.add(token);
+    }
+
+    // Validación para caracter simple
+    matcher = caracterSimplePattern.matcher(cadena);
+    if (matcher.find()) {
+      byte inicio = (byte) matcher.start();
+      byte fin = (byte) matcher.end();
+      Token token = generarToken(inicio, fin, CategoriasLexicas.CARACTER_SIMPLE);
+      tablaTokens.add(token);
+    }
+
+    // Validación para palabra reservada
+    matcher = palabraReservadaPattern.matcher(cadena);
+    if (matcher.find()) {
+      byte inicio = (byte) matcher.start();
+      byte fin = (byte) matcher.end();
+      Token token = generarToken(inicio, fin, CategoriasLexicas.PALABRA_RESERVADA);
+      tablaTokens.add(token);
+    }
+
+
+
+    // Otros casos de validación para las demás categorías léxicas
+
+  }
+
 
   /**
    * Crear un token dada una subcadena y u na categoria lexica, y guardarlo en las listas

@@ -2,6 +2,8 @@ package com.analizador.compiladores.demo.controllers;
 
 import com.analizador.compiladores.demo.estructuras.TextoRequest;
 import com.analizador.compiladores.demo.lexico.AnalizadorLexico;
+import com.analizador.compiladores.demo.lexico.LexicalAnalyzer;
+import com.analizador.compiladores.demo.lexico.RespuestaAnalisis;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +25,7 @@ public class PathController {
 
     @CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
     @PostMapping("/analisisLexico")
-    public ResponseEntity<AnalizadorLexico> recibirContenido(@RequestBody TextoRequest texto) throws IOException {
+    public ResponseEntity<RespuestaAnalisis> recibirContenido(@RequestBody TextoRequest texto) throws IOException {
         System.out.println("ENTRA ANALISIS LEXICO");
         try {
             if (texto == null) {
@@ -38,12 +40,19 @@ public class PathController {
                 System.out.println(linea);
             }
 
-            AnalizadorLexico lexico = new AnalizadorLexico(contenido);
 
-            lexico.imprimirSimbolos();
+            RespuestaAnalisis respuesta = new RespuestaAnalisis();
+            //AnalizadorLexico lexico = new AnalizadorLexico(contenido);
+
+            //lexico.imprimirSimbolos();
+
+            LexicalAnalyzer lexico = new LexicalAnalyzer();
+            lexico.analyze(contenido);
+            respuesta.tablaTokens = lexico.tablaTokens;
+            respuesta.tablaErrores = lexico.tablaErrores;
 
             System.out.println("a");
-            return ResponseEntity.ok(lexico); // Devuelve el objeto lexico con status HTTP OK
+            return ResponseEntity.ok(respuesta); // Devuelve el objeto lexico con status HTTP OK
         } catch (IllegalArgumentException e) {
             // Manejo de la excepción de argumento inválido
             System.err.println("Error: " + e.getMessage());
