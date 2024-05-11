@@ -13,7 +13,9 @@ import java.util.List;
 public class AnalizadorLexico {
   ArrayList<String> lineas;
   private final AFN automata;
-  public Lista<Token> simbolos;
+  private Lista<Token> simbolos;
+
+  public List<Token> tablaTokens = new ArrayList<>();
 
   public List<ErrorLexico> tablaErrores = new ArrayList<>();
 
@@ -42,6 +44,7 @@ public class AnalizadorLexico {
     System.out.println("\nIdentificadores: ");
     while (nodoActual != null) {
       System.out.println(nodoActual.getDato().getLexema());
+      tablaTokens.add(nodoActual.getDato());
       nodoActual = nodoActual.getSiguiente();
     }
     System.out.println("Tabla de errores");

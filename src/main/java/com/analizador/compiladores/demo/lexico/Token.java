@@ -5,9 +5,9 @@ package com.analizador.compiladores.demo.lexico;
  * @author Aldana Pérez José Samuel <20240446@leon.tecnm.mx>
  */
 public class Token {
-  private final String lexema;
-  private final int atributo;
-  private final String categoriaLexica;
+  public final String lexema;
+  public final int atributo;
+  public final String categoriaLexica;
 
   /**
    * Instanciar un token

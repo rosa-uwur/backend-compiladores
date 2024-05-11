@@ -40,8 +40,8 @@ public class AFN {
     this.estado = 0;
     this.i = this.f = 0;
     this.l = 0;
-    this.caracteresSimples = new Character[] {';', '=', '+', '-', '*', '(', ')', '{', '}', ',', '/', '%', '+', '-', '<', '>', '[', ']', '.', '¡', '!', '"', '"', '¿', '?', '_', '$', '#', '@', '&', '|'};
-    this.palabrasReservadas = new String[] { "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
+    this.caracteresSimples = new Character[] {'ñ',';', '=', '+', '-', '*', '(', ')', '{', '}', ',', '/', '%', '+', '-', '<', '>', '[', ']', '.', '¡', '!', '"', '"', '¿', '?', '_', '$', '#', '@', '&', '|'};
+    this.palabrasReservadas = new String[] { "¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
     this.simbolos = new Lista<>();
   }
 
@@ -54,8 +54,8 @@ public class AFN {
     // Si se llegó a la última línea
     if (l == lineas.size()) return null;
 
-    // Saltarse las lineas en blanco
-    while(lineas.get(l).trim().isBlank()) l++;
+    // Saltarse las lineas en blanco y los comentarios
+    while(lineas.get(l).trim().isBlank() || lineas.get(l).trim().startsWith("//")) l++;
 
     cadena = lineas.get(l).trim();
     estado = 0;
@@ -77,7 +77,7 @@ public class AFN {
               estado = 5;
             } else if (esLetraMinuscula(c)) {
               estado = 8;
-            } else if (esEspacio(c)) {
+            } else if (esEspacio(c) ) { //ignora espacios
               i++;
             } else {
               generarError("Caracter desconocido: " + c, l);
@@ -133,8 +133,7 @@ public class AFN {
             break;
 
           case 4: // Números enteros o punto flotante
-            if (c == '.') estado = 6;
-            else if (esCaracterSimple(c) || esEspacio(c))
+            if (esCaracterSimple(c) || esEspacio(c))
               token = generarToken(i, f, CategoriasLexicas.NUMERO_ENTERO);
             else if (!esDigito(c)) {
               generarError("Caracter invalido en un número: " + c, l);
@@ -204,24 +203,33 @@ public class AFN {
             }
             break;
 
-          case 8: // Estado final palabra reservada
-            if (esCaracterSimple(c) || esEspacio(c)) {
-              if (esPalabraReservada(cadena.substring(i, f)))
-                token = generarToken(i, f, CategoriasLexicas.PALABRA_RESERVADA);
-              else{
-                generarError("Palabra reservada no identificada: " + cadena.substring(i, f), l);
-                el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena.substring(i, f));
-                tablaErrores.add(el);
-                estado = 0;
+        case 8: // Estado final palabra reservada
+          if (esCaracterSimple(c) || esEspacio(c)) {
+            if (esPalabraReservada(cadena.substring(i, f))) {
+              token = generarToken(i, f, CategoriasLexicas.PALABRA_RESERVADA);
+            } else {
+              // Verificar si es un identificador (nombre de variable)
+              if (esIdentificador(cadena.substring(i, f))) {
+                token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
+              } else {
+                // Verificar si es texto contenido en comillas
+                if (esTextoComillas(cadena.substring(i, f))) {
+                  token = generarToken(i, f, CategoriasLexicas.IDENTIFICADOR);
+                } else {
+                  generarError("Palabra reservada no identificada: " + cadena.substring(i, f), l);
+                  el = new ErrorLexico("Palabra reservada no identificada: ", l, cadena.substring(i, f));
+                  tablaErrores.add(el);
+                  estado = 0;
+                }
               }
             }
-            else if (!esLetraMinuscula(c)) {
-              generarError("Caracter invalido en una palabra reservada: " + c, l);
-              el = new ErrorLexico("Caracter invalido en una palabra reservada: " , l, String.valueOf(c));
-              tablaErrores.add(el);
-              estado = 12;
-            }
-            break;
+          } else if (!esLetraMinuscula(c)) {
+            generarError("Caracter invalido en una palabra reservada: " + c, l);
+            el = new ErrorLexico("Caracter invalido en una palabra reservada: " , l, String.valueOf(c));
+            tablaErrores.add(el);
+            estado = 12;
+          }
+          break;
 
           case 9: // Lexico.Error Identificadores
             if (esCaracterSimple(c) || esEspacio(c)) {
@@ -285,7 +293,7 @@ public class AFN {
           } else if (estado == 7) {
             token = generarToken(i, (byte) (f + 1), CategoriasLexicas.NUMERO_PUNTO_FLOTANTE);
           } else if (estado == 8) {
-            if (esPalabraReservada(cadena.substring(i, f + 1))) {
+            if (esPalabraReservada(cadena)){//.substring(i, f + 1))) {
               token = generarToken(i, (byte) (f + 1), CategoriasLexicas.PALABRA_RESERVADA);
             } else {
               generarError("Palabra reservada no identificada: " + cadena.substring(i, f + 1), l);
@@ -419,6 +427,34 @@ public class AFN {
 
     return encontrado;
   }
+
+  // Función para verificar si una cadena es un identificador (nombre de variable)
+  public boolean esIdentificador(String cadena) {
+    if (cadena == null || cadena.isEmpty()) {
+      return false;
+    }
+    if (!Character.isLetter(cadena.charAt(0))) {
+      return false;
+    }
+    for (int i = 1; i < cadena.length(); i++) {
+      if (!Character.isLetterOrDigit(cadena.charAt(i)) && cadena.charAt(i) != '_') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Función para verificar si una cadena está contenido entre comillas
+  public boolean esTextoComillas(String cadena) {
+    if (cadena == null || cadena.isEmpty()) {
+      return false;
+    }
+    if (cadena.charAt(0) != '"' || cadena.charAt(cadena.length() - 1) != '"') {
+      return false;
+    }
+    return true;
+  }
+
 
   /**
    * @param c Caracter
