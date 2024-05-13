@@ -5,5 +5,5 @@ import java.util.List;
 
 public class RespuestaAnalisis {
     public List<Tokenv2> tablaTokens = new ArrayList<>();
-    public List<LexicalError> tablaErrores = new ArrayList<>();
+    public List<ErrorLexico> tablaErrores = new ArrayList<>();
 }

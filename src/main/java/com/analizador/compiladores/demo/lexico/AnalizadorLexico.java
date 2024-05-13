@@ -1,70 +1,238 @@
 package com.analizador.compiladores.demo.lexico;
-
-import com.analizador.compiladores.demo.estructuras.Archivo;
-import com.analizador.compiladores.demo.estructuras.Lista;
-import com.analizador.compiladores.demo.estructuras.Nodo;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Clase para el analizador léxico
- */
 public class AnalizadorLexico {
-  ArrayList<String> lineas;
-  private final AFN automata;
-  private Lista<Token> simbolos;
 
-  public List<Token> tablaTokens = new ArrayList<>();
-
-  public List<ErrorLexico> tablaErrores = new ArrayList<>();
+    private Map<String, Integer> palabrasMap = new HashMap<>();
+    private void llenaPalabras(){
+         String[] palabrasReservadas = new String[]{"negocio", "vigilancia", "lugar","misiones" ,"control","¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
 
 
-  public AnalizadorLexico(ArrayList<String> lineas) {
-    this.lineas = lineas;
-    automata = new AFN(lineas);
+        for(String palabra : palabrasReservadas) {
+            palabrasMap.put(palabra, palabra.length());
+        }
 
-    for (String linea: lineas){
-      getSiguienteToken();
+        // Imprimir el HashMap
+        for (Map.Entry<String, Integer> entry : palabrasMap.entrySet()) {
+            System.out.println("Palabra: " + entry.getKey() + ", Longitud: " + entry.getValue());
+        }
     }
-  }
 
-  /**
-   * @return Siguiente token válido en el programa
-   */
-  private Token getSiguienteToken() {
-    return automata.obtenerSiguientToken(); }
-
-  /**
-   * Mostrar los identificadores encontrados en el programa
-   */
-  public void imprimirSimbolos() {
-    simbolos = automata.getSimbolos();
-    Nodo<Token> nodoActual = simbolos.getCabeza();
-
-    System.out.println("\nIdentificadores: ");
-    while (nodoActual != null) {
-      System.out.println(nodoActual.getDato().getLexema());
-      tablaTokens.add(nodoActual.getDato());
-      nodoActual = nodoActual.getSiguiente();
+    public AnalizadorLexico(){
+        llenaPalabras();
     }
-    System.out.println("Tabla de errores");
-    this.tablaErrores = automata.tablaErrores;
-    for(ErrorLexico error : automata.tablaErrores) {
-      System.out.println("Mensaje: " + error.getMensaje());
-      System.out.println("Línea: " + error.getLinea());
-      System.out.println("Token: " + error.getToken());
-      System.out.println(); // Salto de línea para separar cada instancia de ErrorLexico
-    }
-  }
 
-  /**
-   * Mostrar el programa a analizar
-   */
-  public void imprimirArchivo() {
-    System.out.println("\nPrograma a analizar: ");
-    for (String linea: lineas) {
-      System.out.println(linea);
+    public   List<Tokenv2> tablaTokens = new ArrayList<>();
+    public   List<ErrorLexico> tablaErrores = new ArrayList<>();
+    public  void analizar(ArrayList<String> cadenas) {
+        int numlinea = 0;
+        for (String code : cadenas) {
+            numlinea++;
+            analizar(code, numlinea);
+            // Imprimir la tabla de tablaTokens para cada cadena
+            System.out.println("Tabla de tablaTokens para la cadena:");
+            for (Tokenv2 Tokenv2 : tablaTokens) {
+                System.out.println(Tokenv2);
+            }
+
+            // Imprimir la tabla de errores para cada cadena
+            System.out.println("\nTabla de errores para la cadena:");
+            for (ErrorLexico error : tablaErrores) {
+                System.out.println(error);
+            }
+        }
     }
-  }
+
+
+    public void analizar(String code,int  l) {
+        int posicion = 0;
+        while (posicion < code.length()) {
+            char caracterActual = code.charAt(posicion);
+
+            if (Character.isWhitespace(caracterActual) || caracterActual == ' ') {
+                posicion++;
+            } else if (Character.isLetter(caracterActual) || caracterActual == '_') {
+                int start = posicion;
+                while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_')) {
+                    posicion++;
+                }
+                String identifier = code.substring(start, posicion);
+
+                // Verificar si el identificador es una palabra reservada mal escrita
+                // Validar que el identificador comience con '#' seguido de letras
+                if (identifier.matches("^#[a-zA-Z]+$")) {
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                } else if (palabrasMap.containsKey(identifier)) {
+                    tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier));
+                }else if (identifier.matches("^#[a-zA-Z]+$")) {
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                }
+
+
+            }else if (Character.isDigit(caracterActual)) {
+                int start = posicion;
+                while (posicion < code.length() && Character.isDigit(code.charAt(posicion))) {
+                    posicion++;
+                }
+                String numericLiteral = code.substring(start, posicion);
+                int value = Integer.parseInt(numericLiteral);
+                if (value >= 0 && value <= 9) {
+                    tablaTokens.add(new Tokenv2(TokenType.DIGIT, value));
+                } else {
+                    tablaTokens.add(new Tokenv2(TokenType.INTEGER, value));
+                }
+            }else if (caracterActual == '"') {
+                int start = posicion;
+                posicion++;
+                while (posicion < code.length() && code.charAt(posicion) != '"') {
+                    if (code.charAt(posicion) == '\\') {
+                        posicion++;
+                    }
+                    posicion++;
+                }
+                if (posicion == code.length()) {
+                    tablaErrores.add(new ErrorLexico("String no encerrada en comillas", l));
+                } else {
+                    String literal = code.substring(start + 1, posicion);
+                    tablaTokens.add(new Tokenv2(TokenType.STRING, literal));
+                    posicion++;
+                }
+
+            }
+            else {
+                switch (caracterActual) {
+                    case '+':
+                        tablaTokens.add(new Tokenv2(TokenType.PLUS, caracterActual));
+                        posicion++;
+                        break;
+                    case '-':
+                        tablaTokens.add(new Tokenv2(TokenType.MINUS, caracterActual));
+                        posicion++;
+                        break;
+                    case '*':
+                        tablaTokens.add(new Tokenv2(TokenType.MULTIPLY, caracterActual));
+                        posicion++;
+                        break;
+                    case '/':
+                        tablaTokens.add(new Tokenv2(TokenType.DIVIDE, caracterActual));
+                        posicion++;
+                        break;
+                    case '=':
+                        if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
+                            tablaTokens.add(new Tokenv2(TokenType.EQUAL_TO, caracterActual));
+                            posicion += 2;
+                        } else {
+                            tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual));
+                            posicion++;
+                        }
+                        break;
+                    case '!':
+                        if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
+                            tablaTokens.add(new Tokenv2(TokenType.NOT_EQUAL_TO, caracterActual));
+                            posicion += 2;
+                        } else {
+                            tablaTokens.add(new Tokenv2(TokenType.ENDPROGRAM, caracterActual));
+                            posicion += 2;
+                        }
+                        break;
+                    case '<':
+                        if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN_OR_EQUAL_TO, caracterActual));
+                            posicion += 2;
+                        } else {
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN, caracterActual));
+                            posicion++;
+                        }
+                        break;
+                    case '>':
+                        if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN_OR_EQUAL_TO, caracterActual));
+                            posicion += 2;
+                        } else {
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN, caracterActual));
+                            posicion++;
+                        }
+                        break;
+                    case '(':
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, caracterActual));
+                        posicion++;
+                        break;
+                    case ')':
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, caracterActual));
+                        posicion++;
+                        break;
+                    case '{':
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual));
+                        posicion++;
+                        break;
+                    case '}':
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        posicion++;
+                        break;
+                    case ',':
+                        tablaTokens.add(new Tokenv2(TokenType.COMMA, caracterActual));
+                        posicion++;
+                        break;
+                    case ';':
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual));
+                        posicion++;
+                        break;
+                    case '#':
+                        tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, caracterActual));
+                        posicion++;
+                        break;
+                    case '.':
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual));
+                        posicion++;
+                        break;
+                    case '[':
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual));
+                        posicion++;
+                        break;
+                    case ']':
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        posicion++;
+                        break;
+                    case '%':
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        posicion++;
+                        break;
+                    case '¡':
+                        tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual));
+                        posicion++;
+                        break;
+                    case '"':
+                    case ':':
+                        break;
+                    default:
+                        tablaErrores.add(new ErrorLexico("Caracter no valido: " + caracterActual, posicion));
+                        posicion++;
+                        break;
+                }
+            }
+        }
+
+        // Imprimir la tabla de tablaTokens
+        System.out.println("Tabla de tablaTokens:");
+        for (Tokenv2 Tokenv2 : tablaTokens) {
+            System.out.println(Tokenv2);
+        }
+
+        // Imprimir la tabla de errores
+        System.out.println("\nTabla de errores:");
+        for (ErrorLexico error : tablaErrores) {
+            System.out.println(error);
+        }
+    }
+
+
+
+
+
+
+
+
 }

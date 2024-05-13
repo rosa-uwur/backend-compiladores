@@ -2,16 +2,12 @@ package com.analizador.compiladores.demo.controllers;
 
 import com.analizador.compiladores.demo.estructuras.TextoRequest;
 import com.analizador.compiladores.demo.lexico.AnalizadorLexico;
-import com.analizador.compiladores.demo.lexico.LexicalAnalyzer;
 import com.analizador.compiladores.demo.lexico.RespuestaAnalisis;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 @RestController
@@ -46,8 +42,8 @@ public class PathController {
 
             //lexico.imprimirSimbolos();
 
-            LexicalAnalyzer lexico = new LexicalAnalyzer();
-            lexico.analyze(contenido);
+            AnalizadorLexico lexico = new AnalizadorLexico();
+            lexico.analizar(contenido);
             respuesta.tablaTokens = lexico.tablaTokens;
             respuesta.tablaErrores = lexico.tablaErrores;
 
