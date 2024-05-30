@@ -5,16 +5,19 @@ import com.analizador.compiladores.demo.lexico.TokenType;
 
 public class Tokenv2 {
 
-    private final TokenType type;
+    public final TokenType type;
     private final Object value;
     public String lexema;
+
+    public int linea;
 
     public String categoriaLexica;
 
 
-    public Tokenv2(TokenType type, Object value) {
+    public Tokenv2(TokenType type, Object value, int linea) {
         this.type = type;
         this.value = value;
+        this.linea = linea;
         this.lexema = String.valueOf(value);
         this.categoriaLexica = asignarCategoriaLexica(type);
     }
@@ -94,5 +97,29 @@ public class Tokenv2 {
                 "type=" + type +
                 ", value=" + value +
                 '}';
+    }
+
+    public TokenType getType() {
+        return type;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public String getLexema() {
+        return lexema;
+    }
+
+    public void setLexema(String lexema) {
+        this.lexema = lexema;
+    }
+
+    public String getCategoriaLexica() {
+        return categoriaLexica;
+    }
+
+    public void setCategoriaLexica(String categoriaLexica) {
+        this.categoriaLexica = categoriaLexica;
     }
 }

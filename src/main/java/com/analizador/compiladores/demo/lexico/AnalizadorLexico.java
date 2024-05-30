@@ -64,11 +64,11 @@ public class AnalizadorLexico {
                 // Verificar si el identificador es una palabra reservada mal escrita
                 // Validar que el identificador comience con '#' seguido de letras
                 if (identifier.matches("^#[a-zA-Z]+$")) {
-                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
                 } else if (palabrasMap.containsKey(identifier)) {
-                    tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier));
+                    tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier, l));
                 }else if (identifier.matches("^#[a-zA-Z]+$")) {
-                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier));
+                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
                 }
 
 
@@ -80,9 +80,9 @@ public class AnalizadorLexico {
                 String numericLiteral = code.substring(start, posicion);
                 int value = Integer.parseInt(numericLiteral);
                 if (value >= 0 && value <= 9) {
-                    tablaTokens.add(new Tokenv2(TokenType.DIGIT, value));
+                    tablaTokens.add(new Tokenv2(TokenType.DIGIT, value, l));
                 } else {
-                    tablaTokens.add(new Tokenv2(TokenType.INTEGER, value));
+                    tablaTokens.add(new Tokenv2(TokenType.INTEGER, value, l));
                 }
             }else if (caracterActual == '"') {
                 int start = posicion;
@@ -97,7 +97,7 @@ public class AnalizadorLexico {
                     tablaErrores.add(new ErrorLexico("String no encerrada en comillas", l));
                 } else {
                     String literal = code.substring(start + 1, posicion);
-                    tablaTokens.add(new Tokenv2(TokenType.STRING, literal));
+                    tablaTokens.add(new Tokenv2(TokenType.STRING, literal, l));
                     posicion++;
                 }
 
@@ -105,103 +105,103 @@ public class AnalizadorLexico {
             else {
                 switch (caracterActual) {
                     case '+':
-                        tablaTokens.add(new Tokenv2(TokenType.PLUS, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.PLUS, caracterActual, l));
                         posicion++;
                         break;
                     case '-':
-                        tablaTokens.add(new Tokenv2(TokenType.MINUS, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.MINUS, caracterActual, l));
                         posicion++;
                         break;
                     case '*':
-                        tablaTokens.add(new Tokenv2(TokenType.MULTIPLY, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.MULTIPLY, caracterActual, l));
                         posicion++;
                         break;
                     case '/':
-                        tablaTokens.add(new Tokenv2(TokenType.DIVIDE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.DIVIDE, caracterActual, l));
                         posicion++;
                         break;
                     case '=':
                         if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.EQUAL_TO, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.EQUAL_TO, caracterActual, l));
                             posicion += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual, l));
                             posicion++;
                         }
                         break;
                     case '!':
                         if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.NOT_EQUAL_TO, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.NOT_EQUAL_TO, caracterActual, l));
                             posicion += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.ENDPROGRAM, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.ENDPROGRAM, caracterActual, l));
                             posicion += 2;
                         }
                         break;
                     case '<':
                         if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN_OR_EQUAL_TO, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN_OR_EQUAL_TO, caracterActual, l));
                             posicion += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.LESS_THAN, caracterActual, l));
                             posicion++;
                         }
                         break;
                     case '>':
                         if (posicion + 1 < code.length() && code.charAt(posicion + 1) == '=') {
-                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN_OR_EQUAL_TO, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN_OR_EQUAL_TO, caracterActual, l));
                             posicion += 2;
                         } else {
-                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN, caracterActual));
+                            tablaTokens.add(new Tokenv2(TokenType.GREATER_THAN, caracterActual, l));
                             posicion++;
                         }
                         break;
                     case '(':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, caracterActual, l));
                         posicion++;
                         break;
                     case ')':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, caracterActual, l));
                         posicion++;
                         break;
                     case '{':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual, l));
                         posicion++;
                         break;
                     case '}':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual, l));
                         posicion++;
                         break;
                     case ',':
-                        tablaTokens.add(new Tokenv2(TokenType.COMMA, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.COMMA, caracterActual, l));
                         posicion++;
                         break;
                     case ';':
-                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual, l));
                         posicion++;
                         break;
                     case '#':
-                        tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, caracterActual, l));
                         posicion++;
                         break;
                     case '.':
-                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.SEMICOLON, caracterActual, l));
                         posicion++;
                         break;
                     case '[':
-                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.LEFT_BRACE, caracterActual, l));
                         posicion++;
                         break;
                     case ']':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual, l));
                         posicion++;
                         break;
                     case '%':
-                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.RIGHT_BRACE, caracterActual, l));
                         posicion++;
                         break;
                     case '¡':
-                        tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual));
+                        tablaTokens.add(new Tokenv2(TokenType.ASSIGN, caracterActual, l));
                         posicion++;
                         break;
                     case '"':
