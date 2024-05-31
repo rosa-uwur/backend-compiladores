@@ -88,6 +88,37 @@ public class Tokenv2 {
             case DIGIT:
                 categoriaLexica = "Digito";
                 break;
+            case NOT_EQUAL_TO:
+                categoriaLexica = "Distinto de";
+                break;
+            case LESS_THAN:
+                categoriaLexica = "Menor que";
+                break;
+            case LESS_THAN_OR_EQUAL_TO:
+                categoriaLexica = "Menor o igual que";
+                break;
+            case GREATER_THAN:
+                categoriaLexica = "Mayor que";
+                break;
+            case GREATER_THAN_OR_EQUAL_TO:
+                categoriaLexica = "Mayor o igual que";
+                break;
+            case LEFT_PAREN:
+                categoriaLexica = "Paréntesis izquierdo";
+                break;
+            case RIGHT_PAREN:
+                categoriaLexica = "Paréntesis derecho";
+                break;
+            case LEFT_BRACE:
+                categoriaLexica = "Llave izquierda";
+                break;
+            case RIGHT_BRACE:
+                categoriaLexica = "Llave derecha";
+                break;
+            case COMMA:
+                categoriaLexica = "Coma";
+                break;
+
         }
     return categoriaLexica;
     }

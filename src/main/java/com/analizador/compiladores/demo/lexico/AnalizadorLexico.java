@@ -6,14 +6,21 @@ import java.util.Map;
 
 public class AnalizadorLexico {
 
-    private Map<String, Integer> palabrasMap = new HashMap<>();
+    public Map<String, Integer> palabrasMap = new HashMap<>();
+
+    Map<String, String> palabrasReservadas = new HashMap<>();
     private void llenaPalabras(){
-         String[] palabrasReservadas = new String[]{"negocio", "vigilancia", "lugar","misiones" ,"control","¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
+         String[] palabrasReservadasString = new String[]{"negocio", "vigilancia", "lugar","misiones" ,"control","¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
 
 
-        for(String palabra : palabrasReservadas) {
+        for(String palabra : palabrasReservadasString) {
             palabrasMap.put(palabra, palabra.length());
         }
+
+        palabrasReservadas.put("emboscada", "IF");
+        palabrasReservadas.put("lugar", "ELSE");
+        palabrasReservadas.put("andreas", "WHILE");
+        palabrasReservadas.put("big", "FOR");
 
         // Imprimir el HashMap
         for (Map.Entry<String, Integer> entry : palabrasMap.entrySet()) {
@@ -62,13 +69,24 @@ public class AnalizadorLexico {
                 String identifier = code.substring(start, posicion);
 
                 // Verificar si el identificador es una palabra reservada mal escrita
-                // Validar que el identificador comience con '#' seguido de letras
-                if (identifier.matches("^#[a-zA-Z]+$")) {
-                    tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
-                } else if (palabrasMap.containsKey(identifier)) {
+                if (palabrasReservadas.containsKey(identifier)) {
+                    String tokenType = palabrasReservadas.get(identifier);
+                    // Buscar el token en el enum TokenType
+                    for (TokenType type : TokenType.values()) {
+                        if (type.name().equalsIgnoreCase(tokenType)) {
+                            tablaTokens.add(new Tokenv2(type, identifier, l));
+                            return; // Salir del método después de agregar el token
+                        }
+                    }
+                    // Si no se encontró en el enum, agregar como palabra reservada
                     tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier, l));
-                }else if (identifier.matches("^#[a-zA-Z]+$")) {
+                }
+// Validar que el identificador comience con '#' seguido de letras
+                else if (identifier.matches("^#[a-zA-Z]+$")) {
                     tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
+                }// Mostrar un mensaje de error si el identificador no cumple con el formato esperado
+                else {
+                    tablaErrores.add(new ErrorLexico("Identificador incorrecto: " + identifier, l));
                 }
 
 

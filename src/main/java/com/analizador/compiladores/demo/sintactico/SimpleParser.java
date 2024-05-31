@@ -11,6 +11,7 @@ import java.util.Iterator;
 public class SimpleParser {
     private Iterator<Tokenv2> tokens;
     private Tokenv2 currentToken;
+    int linea = 0;
 
     public   List<ErrorLexico> tablaErrores = new ArrayList<>();
 
@@ -21,7 +22,7 @@ public class SimpleParser {
     }
 
     private void advance() {
-        int linea = 0;
+
         if (tokens.hasNext()) {
             currentToken = tokens.next();
             linea = currentToken.linea;
@@ -36,6 +37,7 @@ public class SimpleParser {
 
     private void program() {
         while (currentToken.type != TokenType.ENDPROGRAM) {
+            System.out.println("Lexema: " + currentToken.lexema);
             statement();
             advance();
         }
@@ -43,6 +45,7 @@ public class SimpleParser {
     }
 
     private void statement() {
+        advance();
         switch (currentToken.type) {
             case IDENTIFIER:
                 assignment();
@@ -162,7 +165,7 @@ public class SimpleParser {
         if (currentToken.type == expected) {
             advance();
         } else {
-            tablaErrores.add(new ErrorLexico("Se esperaba "+ expected + " pero se encontro" + currentToken.lexema, currentToken.linea));
+            tablaErrores.add(new ErrorLexico("Se esperaba "+ expected + " pero se encontro: " + currentToken.lexema, currentToken.linea));
         }
     }
 
