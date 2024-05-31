@@ -157,7 +157,8 @@ public class SimpleParser {
                 break;
             default:
                 //throw new RuntimeException("Unexpected token in factor: " + currentToken.type);
-                tablaErrores.add(new ErrorLexico("Token no esperado en factor: " + currentToken.lexema, currentToken.linea));
+                match(TokenType.END_LINE);
+                //tablaErrores.add(new ErrorLexico("Token no esperado en factor: " + currentToken.lexema, currentToken.linea));
         }
     }
 

@@ -22,7 +22,14 @@ public class AnalizadorLexico {
         palabrasReservadas.put("andreas", "WHILE");
         palabrasReservadas.put("big", "FOR");
         palabrasReservadas.put("san andreas", "DO_WHILE");
-
+        palabrasReservadas.put("..", "END_LINE");
+        palabrasReservadas.put("chop", "PRINTLN");
+        palabrasReservadas.put("Exception", "EXCEPTION");
+        palabrasReservadas.put("negocio", "TRY");
+        palabrasReservadas.put("ilegal", "CATCH");
+        palabrasReservadas.put("/gta!", "END_PROGRAM");
+        palabrasReservadas.put("¡gta", "START_PROGRAM");
+        palabrasReservadas.put("vigilancia", "FOREACH");
 
 
         // Imprimir el HashMap
@@ -64,15 +71,17 @@ public class AnalizadorLexico {
 
             if (Character.isWhitespace(caracterActual) || caracterActual == ' ') {
                 posicion++;
+                //ignorar comentarios
             } else if(caracterActual == '/' && posicion + 1 < code.length() && code.charAt(posicion + 1) == '/'){
                 break;
             }
-             else if (Character.isLetter(caracterActual) || caracterActual == '_') {
+             else if (Character.isLetter(caracterActual) || caracterActual == '_' || caracterActual == '#'  || caracterActual == '¡'  || caracterActual == '/'  ) {
                 int start = posicion;
-                while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_')) {
+                while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_' || code.charAt(posicion) == '#' || caracterActual == '¡'  || caracterActual == '/')) {
                     posicion++;
                 }
                 String identifier = code.substring(start, posicion);
+
 
                 // Verificar si el identificador es una palabra reservada mal escrita
                 if (palabrasReservadas.containsKey(identifier)) {
@@ -87,7 +96,7 @@ public class AnalizadorLexico {
                     // Si no se encontró en el enum, agregar como palabra reservada
                     tablaTokens.add(new Tokenv2(TokenType.RESERVED_WORD, identifier, l));
                 }
-// Validar que el identificador comience con '#' seguido de letras
+                // Validar que el identificador comience con '#' seguido de letras
                 else if (identifier.matches("^#[a-zA-Z]+$")) {
                     tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
                 }// Mostrar un mensaje de error si el identificador no cumple con el formato esperado

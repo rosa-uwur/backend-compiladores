@@ -118,7 +118,27 @@ public class Tokenv2 {
             case COMMA:
                 categoriaLexica = "Coma";
                 break;
-
+            case DO_WHILE:
+                categoriaLexica = "Hacer mientras";
+                break;
+            case END_LINE:
+                categoriaLexica = "Fin linea";
+                break;
+            case PRINTLN:
+                categoriaLexica = "Fin linea";
+                break;
+            case EXCEPTION:
+                categoriaLexica = "Excepcion";
+                break;
+            case TRY:
+                categoriaLexica = "Try";
+                break;
+            case CATCH:
+                categoriaLexica = "Catch";
+                break;
+            case FOREACH:
+                categoriaLexica = "For each";
+                break;
         }
     return categoriaLexica;
     }
