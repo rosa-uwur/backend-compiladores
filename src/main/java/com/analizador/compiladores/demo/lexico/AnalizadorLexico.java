@@ -21,6 +21,9 @@ public class AnalizadorLexico {
         palabrasReservadas.put("lugar", "ELSE");
         palabrasReservadas.put("andreas", "WHILE");
         palabrasReservadas.put("big", "FOR");
+        palabrasReservadas.put("san andreas", "DO_WHILE");
+
+
 
         // Imprimir el HashMap
         for (Map.Entry<String, Integer> entry : palabrasMap.entrySet()) {
@@ -61,7 +64,10 @@ public class AnalizadorLexico {
 
             if (Character.isWhitespace(caracterActual) || caracterActual == ' ') {
                 posicion++;
-            } else if (Character.isLetter(caracterActual) || caracterActual == '_') {
+            } else if(caracterActual == '/' && posicion + 1 < code.length() && code.charAt(posicion + 1) == '/'){
+                break;
+            }
+             else if (Character.isLetter(caracterActual) || caracterActual == '_') {
                 int start = posicion;
                 while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_')) {
                     posicion++;
