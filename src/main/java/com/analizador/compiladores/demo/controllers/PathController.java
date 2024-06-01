@@ -48,13 +48,55 @@ public class PathController {
 
             AnalizadorLexico lexico = new AnalizadorLexico();
             lexico.analizar(contenido);
+            //SimpleParser sintactico = new SimpleParser(lexico.tablaTokens);
+            respuesta.tablaTokens = lexico.tablaTokens;
+            respuesta.tablaErrores = lexico.tablaErrores;
+
+
+            System.out.println("a");
+            return ResponseEntity.ok(respuesta); // Devuelve el objeto lexico con status HTTP OK
+        } catch (IllegalArgumentException e) {
+            // Manejo de la excepción de argumento inválido
+            System.err.println("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // Devuelve un status de error 400
+        }
+    }
+
+
+
+    @CrossOrigin(origins = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+    @PostMapping("/analisisSintactico")
+    public ResponseEntity<RespuestaAnalisis> recibirContenido2(@RequestBody TextoRequest texto) throws IOException {
+        System.out.println("ENTRA ANALISIS LEXICO");
+        try {
+            if (texto == null) {
+                throw new IllegalArgumentException("El objeto 'texto' es nulo.");
+            }
+            ArrayList<String> contenido = new ArrayList<>();
+
+            String[] lineas = texto.getTexto().split("\\r?\\n");
+
+            for (String linea : lineas) {
+                contenido.add(linea);
+                System.out.println(linea);
+            }
+
+
+            RespuestaAnalisis respuesta = new RespuestaAnalisis();
+            //AnalizadorLexico lexico = new AnalizadorLexico(contenido);
+
+            //lexico.imprimirSimbolos();
+
+            AnalizadorLexico lexico = new AnalizadorLexico();
+            lexico.analizar(contenido);
             SimpleParser sintactico = new SimpleParser(lexico.tablaTokens);
             respuesta.tablaTokens = lexico.tablaTokens;
             respuesta.tablaErrores = lexico.tablaErrores;
 
-            for (ErrorLexico error : sintactico.tablaErrores) {
-                System.out.println(error.toString());
-            }
+            respuesta.tablaErrores.addAll(sintactico.tablaErrores);
+
+
+
 
             System.out.println("a");
             return ResponseEntity.ok(respuesta); // Devuelve el objeto lexico con status HTTP OK

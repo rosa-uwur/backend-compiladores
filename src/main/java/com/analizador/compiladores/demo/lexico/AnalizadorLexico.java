@@ -67,6 +67,7 @@ public class AnalizadorLexico {
     }
 
     public   List<Tokenv2> tablaTokens = new ArrayList<>();
+    int numLinea = 0;
     public   List<ErrorLexico> tablaErrores = new ArrayList<>();
     public void analizar(ArrayList<String> cadenas) {
         for (String code : cadenas) {
@@ -75,7 +76,7 @@ public class AnalizadorLexico {
     }
 
     public void analizar(String code) {
-        int numLinea = 0;
+        numLinea++;
         analizarLinea(code, numLinea);
         imprimirTablas();
     }
@@ -89,7 +90,7 @@ public class AnalizadorLexico {
             } else if (caracterActual == '/' && posicion + 1 < code.length() && code.charAt(posicion + 1) == '/') {
                 break;
             } else if (caracterActual == '(') {
-                tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, caracterActual, numLinea));
+                tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, caracterActual, numLinea));
                 posicion = procesarExpresion(code, numLinea);
             }else if (caracterActual == '"' || caracterActual == '\'') {
                 posicion = procesarString(code, numLinea);
@@ -144,9 +145,11 @@ public class AnalizadorLexico {
 
         String identifier = code.substring(start, posicion);
         System.out.println("identifier" + identifier );
+        System.out.println(palabrasReservadas.containsKey(identifier));
         if (palabrasReservadas.containsKey(identifier)) {
             String tokenType = palabrasReservadas.get(identifier);
             for (TokenType type : TokenType.values()) {
+                System.out.println("aaa " + type.name() + " = " +tokenType );
                 if (type.name().equalsIgnoreCase(tokenType)) {
                     System.out.println("type: "+ type);
                     tablaTokens.add(new Tokenv2(type, identifier, numLinea));
@@ -166,8 +169,13 @@ public class AnalizadorLexico {
 
                     if(!Character.isLetter(caracterActual) && !Character.isDigit(caracterActual)){
                         validaCaracter(code, caracterActual, numLinea);
+                    }else{
+                        if (!Character.isDigit(caracterActual)){
+                            tablaErrores.add(new ErrorLexico("Identificador incorrecto: " + identifier, numLinea, "Lexico"));
+                        }
+
                     }
-                    //tablaErrores.add(new ErrorLexico("Identificador incorrecto: " + identifier, numLinea));
+
                 }
             }
         }
@@ -215,7 +223,7 @@ public class AnalizadorLexico {
                 String literal = code.substring(start + 1, posicion);
                 tablaTokens.add(new Tokenv2(TokenType.STRING, literal, numLinea));
             }else{
-                tablaErrores.add(new ErrorLexico("String no encerrada en comillas", numLinea));
+                tablaErrores.add(new ErrorLexico("String no encerrada en comillas", numLinea, "Lexico"));
             }
         }
 
@@ -310,7 +318,7 @@ public class AnalizadorLexico {
                     tablaTokens.add(new Tokenv2(TokenType.END_LINE, "..", numLinea));
                     posicion++;
                 }else{
-                    tablaErrores.add(new ErrorLexico("Caracter no esperado: " + caracterActual, numLinea));
+                    tablaErrores.add(new ErrorLexico("Caracter no esperado: " + caracterActual, numLinea, "Lexico"));
                 }
 
                 break;
@@ -330,7 +338,7 @@ public class AnalizadorLexico {
             case ':':
                 break;
             default:
-                tablaErrores.add(new ErrorLexico("Caracter no valido: " + caracterActual, numLinea));
+                tablaErrores.add(new ErrorLexico("Caracter no valido: " + caracterActual, numLinea, "Lexico"));
                 break;
         }
     }

@@ -199,6 +199,9 @@ public class Tokenv2 {
             case AS:
                 categoriaLexica = "as";
                 break;
+            case START_PROGRAM:
+                categoriaLexica = "Inicio programa";
+                break;
             case DEFAULT:
                 categoriaLexica = "Default";
                 break;

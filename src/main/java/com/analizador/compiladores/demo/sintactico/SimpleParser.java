@@ -3,6 +3,7 @@ package com.analizador.compiladores.demo.sintactico;
 import com.analizador.compiladores.demo.lexico.ErrorLexico;
 import com.analizador.compiladores.demo.lexico.TokenType;
 import com.analizador.compiladores.demo.lexico.Tokenv2;
+import org.apache.el.parser.Token;
 
 import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.sql.SQLOutput;
@@ -69,17 +70,59 @@ public class SimpleParser {
                 break;
             case FOREACH:
                 foreachDeclararion();
+                break;
+            case ASSIGN:
+                assignDeclaration();
+                break;
             default:
                 //throw new RuntimeException("Unexpected token: " + currentToken.type);
-                tablaErrores.add(new ErrorLexico("Token no esperado " + currentToken.lexema, currentToken.linea));
+                tablaErrores.add(new ErrorLexico("Token no esperado " + currentToken.lexema + " (" + currentToken.type.toString() + ")", currentToken.linea,"Sintactico"));
+                break;
         }
     }
 
     private void assignment() {
         match(TokenType.IDENTIFIER);
-        match(TokenType.ASSIGN);
 
-        expression();
+        advance();
+        switch (currentToken.type){
+            case ARRAY:
+                match(TokenType.LEFT_PAREN);
+                while(currentToken.type != TokenType.RIGHT_PAREN && (currentToken.type == TokenType.STRING || currentToken.type == TokenType.COMMA || currentToken.type == TokenType.INTEGER  ) ){
+                    if (currentToken.type != TokenType.STRING && currentToken.type != TokenType.COMMA && currentToken.type != TokenType.INTEGER ){
+                        tablaErrores.add(new ErrorLexico("Token inesperado " + currentToken.lexema + " se esperaba asignacion", currentToken.linea,"Sintactico"));
+                    }
+                    advance();
+                }
+                break;
+            default:
+                match(TokenType.ASSIGN);
+                expression();
+                break;
+        }
+
+        match(TokenType.END_LINE);
+    }
+
+
+    private void assignDeclaration(){
+        advance();
+        switch (currentToken.type){
+            case ARRAY:
+                match(TokenType.ARRAY);
+                match(TokenType.LEFT_PAREN);
+                while(currentToken.type != TokenType.RIGHT_PAREN && (currentToken.type == TokenType.STRING || currentToken.type == TokenType.COMMA || currentToken.type == TokenType.INTEGER  ) ){
+                    if (currentToken.type != TokenType.STRING && currentToken.type != TokenType.COMMA && currentToken.type != TokenType.INTEGER ){
+                        tablaErrores.add(new ErrorLexico("Token inesperado " + currentToken.lexema + " se esperaba asignacion", currentToken.linea,"Sintactico"));
+                    }
+                    advance();
+                }
+                match(TokenType.RIGHT_PAREN);
+                break;
+            default:
+                expression();
+                break;
+        }
         match(TokenType.END_LINE);
     }
 
@@ -131,7 +174,7 @@ public class SimpleParser {
     }
 
     private void foreachDeclararion() {
-        match(TokenType.FOREACH);
+
         match(TokenType.LEFT_PAREN);
         expression();
         match(TokenType.RIGHT_PAREN);
@@ -206,7 +249,7 @@ public class SimpleParser {
         if (currentToken.type == expected) {
             advance();
         } else {
-            tablaErrores.add(new ErrorLexico("Se esperaba "+ expected + " pero se encontro: " + currentToken.lexema, currentToken.linea));
+            tablaErrores.add(new ErrorLexico("Se esperaba "+ expected + " pero se encontro: " + currentToken.lexema + " (" + currentToken.type.toString() +")", currentToken.linea,"Sintactico"));
         }
     }
 
