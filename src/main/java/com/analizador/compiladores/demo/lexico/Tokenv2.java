@@ -125,7 +125,7 @@ public class Tokenv2 {
                 categoriaLexica = "Fin linea";
                 break;
             case PRINTLN:
-                categoriaLexica = "Fin linea";
+                categoriaLexica = "Imprime linea";
                 break;
             case EXCEPTION:
                 categoriaLexica = "Excepcion";
