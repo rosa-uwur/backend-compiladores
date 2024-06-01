@@ -139,6 +139,71 @@ public class Tokenv2 {
             case FOREACH:
                 categoriaLexica = "For each";
                 break;
+            case CLASS:
+                categoriaLexica = "Clase";
+                break;
+            case STATIC:
+                categoriaLexica = "Static";
+                break;
+            case CONTS:
+                categoriaLexica = "Const";
+                break;
+            case NAMESPACE:
+                categoriaLexica = "Namespace";
+                break;
+            case USE:
+                categoriaLexica = "Use";
+                break;
+            case INCLUDE:
+                categoriaLexica = "Include";
+                break;
+            case CONSTRUCT:
+                categoriaLexica = "Construct";
+                break;
+            case TRUE:
+                categoriaLexica = "True";
+                break;
+            case FALSE:
+                categoriaLexica = "False";
+                break;
+            case NEW:
+                categoriaLexica = "New";
+                break;
+            case SWITCH:
+                categoriaLexica = "Switch";
+                break;
+            case CASE:
+                categoriaLexica = "Case";
+                break;
+            case BREAK:
+                categoriaLexica = "Break";
+                break;
+            case REQUIRE:
+                categoriaLexica = "Require";
+                break;
+            case THIS:
+                categoriaLexica = "For each";
+                break;
+            case ARRAY:
+                categoriaLexica = "Array";
+                break;
+            case EXTENDS:
+                categoriaLexica = "Extends";
+                break;
+            case FINALLY:
+                categoriaLexica = "Finally";
+                break;
+            case SELF:
+                categoriaLexica = "Self";
+                break;
+            case AS:
+                categoriaLexica = "as";
+                break;
+            case DEFAULT:
+                categoriaLexica = "Default";
+                break;
+
+
         }
     return categoriaLexica;
     }

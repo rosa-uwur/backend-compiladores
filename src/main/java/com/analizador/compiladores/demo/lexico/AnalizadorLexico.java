@@ -7,7 +7,7 @@ import java.util.Map;
 public class AnalizadorLexico {
 
     public Map<String, Integer> palabrasMap = new HashMap<>();
-
+    public Map<String, String> identificadores = new HashMap<>();
     Map<String, String> palabrasReservadas = new HashMap<>();
     private void llenaPalabras(){
          String[] palabrasReservadasString = new String[]{"negocio", "vigilancia", "lugar","misiones" ,"control","¡gta", "gta", "chop", "trucos", "asaltos", "armas", "policia", "mismo", "michael", "lester", "trevor", "franklin", "encendido", "apagado", "santos", "emboscada", "lugar", "big", "andreas", "san", "trafico", "modo", "robo", "peligro", "buscar", "nivel", "negocio", "ilegal", "traficante", "vuelo", "avion", "vender"};
@@ -30,7 +30,30 @@ public class AnalizadorLexico {
         palabrasReservadas.put("/gta!", "END_PROGRAM");
         palabrasReservadas.put("¡gta", "START_PROGRAM");
         palabrasReservadas.put("vigilancia", "FOREACH");
-
+        palabrasReservadas.put("misiones", "ARRAY");
+        palabrasReservadas.put("trucos", "CLASS");
+        palabrasReservadas.put("asaltos", "FUNCTION");
+        palabrasReservadas.put("armas", "STATIC");
+        palabrasReservadas.put("mismo", "CONTS");
+        palabrasReservadas.put("michael", "NAMESPACE");
+        palabrasReservadas.put("lester", "USE");
+        palabrasReservadas.put("trevor", "INCLUDE");
+        palabrasReservadas.put("franklin", "CONSTRUCT");
+        palabrasReservadas.put("encendido", "TRUE");
+        palabrasReservadas.put("apagado", "FALSE");
+        palabrasReservadas.put("santos", "NEW");
+        palabrasReservadas.put("trafico", "SWITCH");
+        palabrasReservadas.put("modo", "CASE");
+        palabrasReservadas.put("robo", "BREAK");
+        palabrasReservadas.put("peligro", "REQUIRE");
+        palabrasReservadas.put("buscar", "THIS");
+        palabrasReservadas.put("nivel", "EXTENDS");
+        palabrasReservadas.put("traficante", "FINALLY");
+        palabrasReservadas.put("vuelo", "USE");
+        palabrasReservadas.put("avion", "SELF");
+        palabrasReservadas.put("vender", "DEFAULT");
+        palabrasReservadas.put("misiones", "ARRAY");
+        palabrasReservadas.put("as", "AS");
 
         // Imprimir el HashMap
         for (Map.Entry<String, Integer> entry : palabrasMap.entrySet()) {
@@ -74,10 +97,26 @@ public class AnalizadorLexico {
                 //ignorar comentarios
             } else if(caracterActual == '/' && posicion + 1 < code.length() && code.charAt(posicion + 1) == '/'){
                 break;
-            }
-             else if (Character.isLetter(caracterActual) || caracterActual == '_' || caracterActual == '#'  || caracterActual == '¡'  || caracterActual == '/'  ) {
+            } else if (caracterActual == '(') {
+                tablaTokens.add(new Tokenv2(TokenType.RIGHT_PAREN, caracterActual, l));
+                int start = posicion + 1;
+
+                while (posicion < code.length() && code.charAt(posicion) != ')') {
+                    if (Character.isWhitespace(code.charAt(posicion)) || code.charAt(posicion) == ' ') {
+                        posicion++;
+                    } else {
+                        posicion++;
+                    }
+                }
+                String identifier = code.substring(start, posicion);
+
+                tablaTokens.add(new Tokenv2(TokenType.STRING, identifier, l));
+                if (code.charAt(posicion) == ')'){
+                    tablaTokens.add(new Tokenv2(TokenType.LEFT_PAREN, code.charAt(posicion), l));
+                }
+            } else if (Character.isLetter(caracterActual) || caracterActual == '_' || caracterActual == '#'  || caracterActual == '¡'  || caracterActual == '/'   ) {
                 int start = posicion;
-                while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_' || code.charAt(posicion) == '#' || caracterActual == '¡'  || caracterActual == '/')) {
+                while (posicion < code.length() && (Character.isLetterOrDigit(code.charAt(posicion)) || code.charAt(posicion) == '_' || code.charAt(posicion) == '#' || caracterActual == '¡'  || caracterActual == '/' )) {
                     posicion++;
                 }
                 String identifier = code.substring(start, posicion);
@@ -99,9 +138,18 @@ public class AnalizadorLexico {
                 // Validar que el identificador comience con '#' seguido de letras
                 else if (identifier.matches("^#[a-zA-Z]+$")) {
                     tablaTokens.add(new Tokenv2(TokenType.IDENTIFIER, identifier, l));
+                    identificadores.put(identifier, TokenType.IDENTIFIER.toString());
+
                 }// Mostrar un mensaje de error si el identificador no cumple con el formato esperado
                 else {
-                    tablaErrores.add(new ErrorLexico("Identificador incorrecto: " + identifier, l));
+                    System.out.println("error: " + identifier);
+                    if (identifier.matches("^[a-zA-Z_][a-zA-Z0-9_]*\\\\(.*\\\\)$")){
+                        tablaTokens.add(new Tokenv2(TokenType.FUNCTION, identifier, l));
+                        identificadores.put(identifier, TokenType.IDENTIFIER.toString());
+                    }else{
+                        tablaErrores.add(new ErrorLexico("Identificador incorrecto: " + identifier, l));
+                    }
+
                 }
 
 

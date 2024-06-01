@@ -4,6 +4,8 @@ import com.analizador.compiladores.demo.lexico.ErrorLexico;
 import com.analizador.compiladores.demo.lexico.TokenType;
 import com.analizador.compiladores.demo.lexico.Tokenv2;
 
+import javax.swing.plaf.synth.SynthOptionPaneUI;
+import java.sql.SQLOutput;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -59,6 +61,14 @@ public class SimpleParser {
             case FUNCTION:
                 functionDeclaration();
                 break;
+            case ARRAY:
+                arrayDeclaration();
+                break;
+            case PRINTLN:
+                printlnDeclaration();
+                break;
+            case FOREACH:
+                foreachDeclararion();
             default:
                 //throw new RuntimeException("Unexpected token: " + currentToken.type);
                 tablaErrores.add(new ErrorLexico("Token no esperado " + currentToken.lexema, currentToken.linea));
@@ -68,8 +78,16 @@ public class SimpleParser {
     private void assignment() {
         match(TokenType.IDENTIFIER);
         match(TokenType.ASSIGN);
+
         expression();
-        match(TokenType.SEMICOLON);
+        match(TokenType.END_LINE);
+    }
+
+
+    private void printlnDeclaration() {
+        match(TokenType.PRINTLN);
+        statement();
+        match(TokenType.END_LINE);
     }
 
     private void ifStatement() {
@@ -92,12 +110,33 @@ public class SimpleParser {
         }
     }
 
+    private void arrayDeclaration() {
+        match(TokenType.ARRAY);
+        match(TokenType.LEFT_PAREN);
+        expression();
+        match(TokenType.RIGHT_PAREN);
+        match(TokenType.END_LINE);
+    }
+
     private void whileStatement() {
         match(TokenType.WHILE);
         match(TokenType.LEFT_PAREN);
         expression();
         match(TokenType.RIGHT_PAREN);
         match(TokenType.LEFT_BRACE);
+        while (currentToken.type != TokenType.RIGHT_BRACE) {
+            statement();
+        }
+        match(TokenType.RIGHT_BRACE);
+    }
+
+    private void foreachDeclararion() {
+        match(TokenType.FOREACH);
+        match(TokenType.LEFT_PAREN);
+        expression();
+        match(TokenType.RIGHT_PAREN);
+        match(TokenType.LEFT_BRACE);
+
         while (currentToken.type != TokenType.RIGHT_BRACE) {
             statement();
         }
@@ -129,7 +168,7 @@ public class SimpleParser {
 
     private void expression() {
         term();
-        while (currentToken.type == TokenType.PLUS || currentToken.type == TokenType.MINUS) {
+        while (currentToken.type == TokenType.PLUS || currentToken.type == TokenType.MINUS || currentToken.type == TokenType.ARRAY || currentToken.type == TokenType.AS) {
             advance();
             term();
         }
@@ -148,6 +187,7 @@ public class SimpleParser {
             case IDENTIFIER:
             case INTEGER:
             case STRING:
+            case ARRAY:
                 advance();
                 break;
             case LEFT_PAREN:
